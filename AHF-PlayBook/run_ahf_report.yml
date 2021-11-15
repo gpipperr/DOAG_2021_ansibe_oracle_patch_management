@@ -1,0 +1,18 @@
+---
+#
+# www.pipperr.de
+# see https://www.pipperr.de/dokuwiki/doku.php?id=linux:ansible_oracle_ahf_install
+#
+- name: Run orachk report
+  hosts: all
+  become: yes
+  become_user: root
+  
+  tasks:
+   
+   - name: run the orachk report 
+     ansible.builtin.command: "/opt/oracle.ahf/bin/tfactl orachk  -a -dball"
+     register: runReport
+
+   - debug: var=runReport.stdout_lines
+

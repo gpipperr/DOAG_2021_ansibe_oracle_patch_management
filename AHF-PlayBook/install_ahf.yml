@@ -1,0 +1,84 @@
+---
+#
+# www.pipperr.de
+# see https://www.pipperr.de/dokuwiki/doku.php?id=linux:ansible_oracle_ahf_install
+#
+- name: Install AHF Framework
+  hosts: all
+
+  tasks:
+
+   - name: download last version
+     local_action:
+      module: ansible.builtin.command
+      cmd:  "/usr/bin/java -jar /srv/patch_storage/bin/getMOSPatch.jar  MOSUser={{MosUser}} MOSPass={{MosPWD}} patch={{PatchId}}  download=all"
+      args:
+        chdir: /srv/patch_storage/ahf
+     register: downloadAHF
+     run_once: true
+     become: no
+
+   - debug: var=downloadAHF.stdout_lines
+ 
+
+   - name: create install directory
+     ansible.builtin.file:
+      path: /tmp/ahf-install
+      state: directory
+ 
+
+   - name: extract File
+     ansible.builtin.unarchive:
+      src: "{{item}}"
+      dest: /tmp/ahf-install
+      remote_src: no
+     with_fileglob:
+      - "/srv/patch_storage/ahf/AHF-*"
+
+   - name: create ahf bin directory
+     become_user: root
+     become: yes
+     ansible.builtin.file:
+      path: /opt/oracle.ahf
+      owner: root
+      group: root
+      state: directory
+
+   - name: create ahf data directory
+     become_user: root
+     become: yes
+     ansible.builtin.file:
+      path: /opt/oracle.ahf/data
+      owner: root
+      group: root
+      state: directory
+
+   - name: start the installer in silent mode
+     become_user: root
+     become: yes
+     ansible.builtin.command: "/tmp/ahf-install/ahf_setup -ahf_loc /opt/oracle.ahf -data_dir /opt/oracle.ahf/data -silent"
+     register: installAHF
+
+   - debug: var=installAHF.stdout_lines
+
+   - name: delete content & directory
+     ansible.builtin.file:
+      state: absent
+      path: /tmp/ahf-install
+
+   - name: register Mail Adress
+     become_user: root
+     become: yes
+     ansible.builtin.command: "/opt/oracle.ahf/bin/tfactl set notificationAddress={{AhfEMail}}"
+     register: ConfigureMailAHF
+
+   - debug: var=ConfigureMailAHF.stdout_lines
+
+   - name: Stop oraChk auto run to avoid disk problems
+     become_user: root
+     become: yes
+     ansible.builtin.command: "/opt/oracle.ahf/bin/tfactl run orachk -autostop"
+     register: ConfigureOraChk
+
+   - debug: var=ConfigureOraChk.stdout_lines
+
