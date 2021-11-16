@@ -11,4 +11,3 @@ With this tool it is possible to automate the patch management of the database e
 
 With Ansible it is possible to replace the DB option "Oracle Database Lifecycle Management Pack"; with the great advantage that non-Oracle components can be completely covered.
 
-Translated with www.DeepL.com/Translator (free version)
