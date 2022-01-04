@@ -11,7 +11,7 @@
   tasks:
    
    - name: run the orachk report 
-     ansible.builtin.command: "/opt/oracle.ahf/bin/tfactl orachk  -a -dball"
+     ansible.builtin.command: "/opt/oracle.ahf/bin/ahfctl orachk  -a -dball"
      register: runReport
 
    - debug: var=runReport.stdout_lines

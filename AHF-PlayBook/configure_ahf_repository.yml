@@ -3,37 +3,46 @@
 # www.pipperr.de
 # see https://www.pipperr.de/dokuwiki/doku.php?id=linux:ansible_oracle_ahf_install
 #
+---
 - name: Configure the DB Connection for orachk
   hosts: all
   become: yes
   become_user: root
-  
+
   tasks:
-   
+
    - name: Deregister the existing configuration
      ansible.builtin.command: "/opt/oracle.ahf/bin/tfactl orachk -unsetdbupload all"
      register: UnConfigureDBConnect
 
    - debug: var=UnConfigureDBConnect.stdout_lines
 
+   - name: Deregister the existing configuration
+     ansible.builtin.command: "/opt/oracle.ahf/bin/ahfctl  unsetupload  -all  -name orachkcm"
+     register: UnConfigureDBConnectAHF
+
+   - debug: var=UnConfigureDBConnectAHF.stdout_lines
+
+
    - name: register the configuration
      ansible.builtin.expect:
        echo: yes
        chdir: "/opt/oracle.ahf/bin"
-       command: "/opt/oracle.ahf/bin/tfactl orachk -setdbupload all"
+       command: "/opt/oracle.ahf/bin/ahfctl  setupload -type sqlnet -name orachkcm "
        timeout: "300"
        responses:
-        (.*)Enter value for RAT_UPLOAD_CONNECT_STRING(.*): "{{ OracleConnectString }}"
-        (.*)Enter value for RAT_UPLOAD_PASSWORD(.*):       "{{ DBPWD }}"
+        (.*)Enter orachkcm.sqlnet.password(.*):       "{{ oracleDBPWD }}"
+        (.*)Enter orachkcm.sqlnet.connectstring(.*):  "{{ oracleDBConnectString }}"
      register: setDBConnection
      #failed_when: "setDBConnection.rc != 0 and 'successfully' not in setDBConnection.stdout"
 
    - debug: var=setDBConnection.stdout_lines
 
    - name: Check the existing configuration
-     ansible.builtin.command: "/opt/oracle.ahf/bin/tfactl orachk -checkdbupload"
-     register: checkDBConnect 
+     ansible.builtin.command: "/opt/oracle.ahf/bin/ahfctl getupload -all -name orachkcm"
+     register: checkDBConnect
      failed_when: "checkDBConnect.rc != 0 and 'good to upload' not in checkDBConnect.stdout"
 
    - debug: var=checkDBConnect.stdout_lines
+
 
